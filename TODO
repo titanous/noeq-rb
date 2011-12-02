@@ -1,0 +1,2 @@
+* generate can probably block forever in specific failure cases
+* multiple server failover support
