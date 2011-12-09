@@ -40,9 +40,15 @@ class NoeqTest < Test::Unit::TestCase
 
   def test_async_generate
     noeq = Noeq.new('localhost', 4444, :async => true)
-    noeq.request_i
+    noeq.request_id
     sleep 0.0001
     assert_equal expected_id, noeq.fetch_id
+  end
+
+  def test_async_request_with_disconnected_server_raises
+    noeq = Noeq.new('localhost', 4444, :async => true)
+    FakeNoeqd.stop
+    assert_raises(Errno::EPIPE) { noeq.request_id }
   end
 
   private
@@ -69,7 +75,7 @@ class FakeNoeqd
   end
 
   def stop
-    @socket.close
+    @socket.close rescue true
   end
 
   def accept_connections
