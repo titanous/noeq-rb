@@ -12,5 +12,5 @@ Gem::Specification.new do |gem|
   gem.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   gem.name          = "noeq"
   gem.require_paths = ["lib"]
-  gem.version       = "0.1.0"
+  gem.version       = "0.2.0"
 end
