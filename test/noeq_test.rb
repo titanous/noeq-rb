@@ -1,7 +1,6 @@
 require 'test/unit'
 require './lib/noeq'
 
-
 class NoeqTest < Test::Unit::TestCase
 
   def setup
@@ -37,6 +36,13 @@ class NoeqTest < Test::Unit::TestCase
     FakeNoeqd.start
 
     assert_equal expected_id, noeq.generate
+  end
+
+  def test_async_generate
+    noeq = Noeq.new('localhost', 4444, :async => true)
+    noeq.request_i
+    sleep 0.0001
+    assert_equal expected_id, noeq.fetch_id
   end
 
   private
