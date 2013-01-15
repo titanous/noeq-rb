@@ -28,6 +28,9 @@ class Noeq
     # sockets, but this is the most common.
     @socket = Socket.new(:INET, :STREAM)
 
+    # If the connection fails after 0.5 seconds, immediately retry.
+    set_socket_timeouts
+
     # In order to create a socket connection we need an address object.
     address = Socket.sockaddr_in(@port, @host)
 
@@ -40,6 +43,8 @@ class Noeq
     # connected instantly. It will be connected in the background, so we ignore
     # the exception
   rescue Errno::EINPROGRESS
+  rescue Errno::ETIMEDOUT
+    retry
   end
 
   def disconnect
@@ -82,6 +87,14 @@ class Noeq
   alias :fetch_ids :fetch_id
 
   private
+
+  def set_socket_timeouts(timeout)
+    secs = Integer(timeout)
+    usecs = Integer((timeout - secs) * 1_000_000)
+    optval = [secs, usecs].pack("l_2")
+    @socket.setsockopt Socket::SOL_SOCKET, Socket::SO_RCVTIMEO, optval
+    @socket.setsockopt Socket::SOL_SOCKET, Socket::SO_SNDTIMEO, optval
+  end
 
   def get_id
     # `noeqd` sends us a 64-bit unsigned integer in network (big-endian) byte
