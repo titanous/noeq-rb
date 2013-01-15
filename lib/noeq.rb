@@ -23,7 +23,7 @@ class Noeq
   end
 
   # The first thing that we need to do is connect to the `noeqd` server.
-  def connect
+  def connect(failures=0)
     # We create a new TCP `STREAM` socket. There are a few other types of
     # sockets, but this is the most common.
     @socket = Socket.new(:INET, :STREAM)
@@ -39,12 +39,13 @@ class Noeq
     # established.
     @async ? @socket.connect_nonblock(address) : @socket.connect(address)
 
+  rescue Errno::EINPROGRESS
     # `Socket.connect_nonblock` raises `Errno::EINPROGRESS` if the socket isn't
     # connected instantly. It will be connected in the background, so we ignore
     # the exception
-  rescue Errno::EINPROGRESS
-  rescue [Errno::ETIMEDOUT, Errno::ECONNREFUSED]
-    retry
+  rescue Errno::ETIMEDOUT, Errno::ECONNREFUSED
+    raise if failures == 3
+    connect(failures + 1)
   end
 
   def disconnect
