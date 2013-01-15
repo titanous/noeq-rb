@@ -43,7 +43,7 @@ class Noeq
     # connected instantly. It will be connected in the background, so we ignore
     # the exception
   rescue Errno::EINPROGRESS
-  rescue Errno::ETIMEDOUT
+  rescue [Errno::ETIMEDOUT, Errno::ECONNREFUSED]
     retry
   end
 
