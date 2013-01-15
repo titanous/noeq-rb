@@ -23,10 +23,13 @@ class Noeq
   end
 
   # The first thing that we need to do is connect to the `noeqd` server.
-  def connect
+  def connect(failures=0)
     # We create a new TCP `STREAM` socket. There are a few other types of
     # sockets, but this is the most common.
     @socket = Socket.new(:INET, :STREAM)
+
+    # If the connection fails after 0.5 seconds, immediately retry.
+    set_socket_timeouts 0.5
 
     # In order to create a socket connection we need an address object.
     address = Socket.sockaddr_in(@port, @host)
@@ -36,10 +39,13 @@ class Noeq
     # established.
     @async ? @socket.connect_nonblock(address) : @socket.connect(address)
 
+  rescue Errno::EINPROGRESS
     # `Socket.connect_nonblock` raises `Errno::EINPROGRESS` if the socket isn't
     # connected instantly. It will be connected in the background, so we ignore
     # the exception
-  rescue Errno::EINPROGRESS
+  rescue Errno::ETIMEDOUT, Errno::ECONNREFUSED
+    raise if failures == 3
+    connect(failures + 1)
   end
 
   def disconnect
@@ -82,6 +88,14 @@ class Noeq
   alias :fetch_ids :fetch_id
 
   private
+
+  def set_socket_timeouts(timeout)
+    secs = Integer(timeout)
+    usecs = Integer((timeout - secs) * 1_000_000)
+    optval = [secs, usecs].pack("l_2")
+    @socket.setsockopt Socket::SOL_SOCKET, Socket::SO_RCVTIMEO, optval
+    @socket.setsockopt Socket::SOL_SOCKET, Socket::SO_SNDTIMEO, optval
+  end
 
   def get_id
     # `noeqd` sends us a 64-bit unsigned integer in network (big-endian) byte
