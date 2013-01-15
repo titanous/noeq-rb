@@ -29,7 +29,7 @@ class Noeq
     @socket = Socket.new(:INET, :STREAM)
 
     # If the connection fails after 0.5 seconds, immediately retry.
-    set_socket_timeouts
+    set_socket_timeouts 0.5
 
     # In order to create a socket connection we need an address object.
     address = Socket.sockaddr_in(@port, @host)
